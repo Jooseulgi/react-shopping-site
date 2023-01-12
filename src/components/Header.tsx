@@ -1,65 +1,42 @@
-import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
-  User,
-} from 'firebase/auth';
-import auth from '../util/firebase';
-import { RiShoppingBag3Line } from 'react-icons/ri';
+import React, { useEffect, useState } from 'react';
+import { Link, Outlet } from 'react-router-dom';
+import { FiShoppingBag } from 'react-icons/fi';
+import { BsFillPencilFill } from 'react-icons/bs';
+import { login, logout, onUserStateChange } from '../api/firebase';
 
-const Header = () => {
-  const navigate = useNavigate();
-  const [userData, setUserData] = useState<User | null>(null);
+export default function Navbar() {
+  const [user, setUser] = useState();
 
-  const handleGoogleLogin = () => {
-    const provider = new GoogleAuthProvider(); // provider를 구글로 설정
-    signInWithPopup(auth, provider) // popup을 이용한 signup
-      .then((data: any) => {
-        setUserData(data.user); // user data 설정
-        console.log(data); // console로 들어온 데이터 표시
-      })
-      .catch(err => {
-        console.log(err);
-      });
+  useEffect(() => {
+    onUserStateChange((user: any) => {
+      console.log(user);
+      setUser(user);
+    });
+  }, []);
+  const handleLogin = () => {
+    login().then(() => setUser);
   };
-
-  const handleGoogleLogout = () => {
-    signOut(auth).then(() => null);
-    console.log(1);
+  const handleLogout = () => {
+    logout().then(() => setUser);
   };
   return (
-    <div className="max-w-7xl m-auto">
-      <header className="flex justify-between">
-        <h1 className="flex items-center text-lg" onClick={() => navigate('/')}>
-          <RiShoppingBag3Line className="mr-2" />
-          Shoppy
-        </h1>
-        <nav>
-          <ul>
-            <li onClick={() => navigate('/products')}>Products</li>
-            <li onClick={() => navigate('/carts')}>Carts</li>
-            <li onClick={() => navigate('/products/new')}>pencil</li>
-            <li>
-              {userData ? (
-                <div>
-                  <span
-                    style={{ backgroundImage: `url(${userData.photoURL})` }}
-                  ></span>
-                  <span>{userData.displayName}</span>
-                  <span onClick={handleGoogleLogout}>Logout</span>
-                </div>
-              ) : (
-                <span onClick={handleGoogleLogin}>Login</span>
-              )}
-            </li>
-          </ul>
+    <div>
+      <header className="flex justify-between border-b border-gray-300 p-2">
+        <Link to="/" className="flex items-center text-4xl text-brand">
+          <FiShoppingBag />
+          <h1>Shoppy</h1>
+        </Link>
+        <nav className="flex items-center gap-4 font-semibold">
+          <Link to="/products">Products</Link>
+          <Link to="/carts">Carts</Link>
+          <Link to="/products/new" className="text-2xl">
+            <BsFillPencilFill />
+          </Link>
+          {!user && <button onClick={handleLogin}>Login</button>}
+          {user && <button onClick={handleLogout}>Logout</button>}
         </nav>
       </header>
       <Outlet />
     </div>
   );
-};
-
-export default Header;
+}
